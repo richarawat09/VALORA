@@ -27,13 +27,12 @@ export default function LoginPage() {
     if (result.success) {
       const role = result.user.role;
       if (role === 'doctor') {
-        router.push('/doctor/dashboard');
+        window.location.href = '/doctor/dashboard';
       } else if (role === 'admin') {
-        router.push('/admin/dashboard');
+        window.location.href = '/admin/dashboard';
       } else {
-        router.push('/patient/dashboard');
+        window.location.href = '/patient/dashboard';
       }
-      router.refresh();
     } else {
       setError(result.error || 'Failed to authenticate');
       setIsSubmitting(false);

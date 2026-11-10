@@ -55,12 +55,8 @@ export default function RegisterPage() {
     const res = await registerUser(formData);
 
     if (res.success) {
-      if (role === 'doctor') {
-        router.push('/doctor/dashboard');
-      } else {
-        router.push('/patient/dashboard');
-      }
-      router.refresh();
+      const destination = role === 'doctor' ? '/doctor/dashboard' : '/patient/dashboard';
+      window.location.href = destination;
     } else {
       setError(res.error || 'Registration failed');
       setIsSubmitting(false);

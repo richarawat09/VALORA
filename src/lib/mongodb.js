@@ -68,15 +68,6 @@ async function connectDB() {
 
       const conn = await mongoose.connect(uri, opts);
       console.log('Mongoose connected successfully to VALORA database');
-
-      // Check if DB needs initial sample data seeding
-      try {
-        const { seedInitialData } = await import('./seed.js');
-        await seedInitialData();
-      } catch (seedErr) {
-        console.warn('Initial seeding note:', seedErr.message);
-      }
-
       return conn;
     })().catch((err) => {
       console.error('MongoDB connection error:', err.message);

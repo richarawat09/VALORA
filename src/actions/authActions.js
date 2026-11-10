@@ -64,11 +64,16 @@ export async function registerUser(formData) {
       const gender = formData.get('gender')?.toString() || 'prefer_not_to_say';
       const dateOfBirth = formData.get('dateOfBirth')?.toString();
 
+      let parsedDob = undefined;
+      if (dateOfBirth && !isNaN(new Date(dateOfBirth).getTime())) {
+        parsedDob = new Date(dateOfBirth);
+      }
+
       await Patient.create({
         userId: newUser._id,
         bloodGroup,
         gender,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        dateOfBirth: parsedDob,
       });
     } else if (role === 'doctor') {
       const specialty = formData.get('specialty')?.toString() || 'General Medicine';
