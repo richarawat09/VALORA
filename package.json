@@ -1,0 +1,36 @@
+{
+  "name": "valora",
+  "version": "1.0.0",
+  "description": "VALORA – Healthcare Management & Digital Medical Records Platform",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start"
+  },
+  "keywords": [
+    "healthcare",
+    "nextjs",
+    "ehr",
+    "emr",
+    "medical-records",
+    "valora"
+  ],
+  "author": "VALORA Health",
+  "license": "ISC",
+  "dependencies": {
+    "autoprefixer": "^10.6.2",
+    "bcryptjs": "^3.0.3",
+    "chart.js": "^4.6.1",
+    "cloudinary": "^2.11.0",
+    "jose": "^6.2.17",
+    "lucide-react": "^1.71.0",
+    "mongoose": "^9.12.1",
+    "next": "^16.4.6",
+    "postcss": "^8.5.32",
+    "react": "^19.3.1",
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^3.4.17"
+  }
+}
