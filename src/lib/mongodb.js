@@ -20,16 +20,22 @@ async function connectDB() {
     const opts = {
       bufferCommands: false,
       maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000, // Fail fast (5s) instead of hanging 30s
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
-      console.log('MongoDB connected successfully to VALORA database');
-      return mongooseInstance;
-    }).catch((err) => {
-      console.error('MongoDB connection error:', err.message);
-      cached.promise = null;
-      throw err;
-    });
+    cached.promise = mongoose.connect(MONGODB_URI, opts)
+      .then((mongooseInstance) => {
+        console.log('MongoDB connected successfully to VALORA database');
+        return mongooseInstance;
+      })
+      .catch((err) => {
+        console.error('MongoDB connection error:', err.message);
+        cached.promise = null;
+        const msg = err.message?.includes('EPERM') || err.message?.includes('ECONNREFUSED') || err.message?.includes('selection timed out')
+          ? `Could not connect to MongoDB. Please configure your MongoDB Atlas URI (or start local MongoDB) in .env.local`
+          : err.message;
+        throw new Error(msg);
+      });
   }
 
   try {
@@ -43,4 +49,3 @@ async function connectDB() {
 }
 
 export default connectDB;
-
