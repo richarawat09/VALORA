@@ -179,6 +179,9 @@ export async function updateDoctorProfile(formData) {
 
     revalidatePath('/doctor/profile');
     revalidatePath('/doctor/dashboard');
+    revalidatePath('/patient/doctors');
+    revalidatePath('/patient/dashboard');
+    revalidatePath('/patient/appointments');
 
     return { success: true, message: 'Doctor profile updated successfully' };
   } catch (error) {
@@ -188,11 +191,27 @@ export async function updateDoctorProfile(formData) {
 }
 
 /**
- * Public/Patient directory to browse verified and active doctors
+ * Public/Patient directory to browse all registered and active doctors
  */
 export async function getDoctorsDirectory(search = '', specialty = '') {
   try {
     await connectDB();
+
+    // 1. Ensure any doctor user has a Doctor profile record
+    const allDoctorUsers = await User.find({ role: 'doctor', status: { $ne: 'suspended' } }).lean();
+    for (const dUser of allDoctorUsers) {
+      const existing = await Doctor.findOne({ userId: dUser._id }).lean();
+      if (!existing) {
+        await Doctor.create({
+          userId: dUser._id,
+          specialty: 'General Medicine',
+          licenseNumber: `MCI-${dUser._id.toString().slice(-6).toUpperCase()}`,
+          experienceYears: 3,
+          consultationFee: 500,
+          isVerified: false,
+        });
+      }
+    }
 
     const query = {};
     if (specialty && specialty !== 'all') {
@@ -203,21 +222,24 @@ export async function getDoctorsDirectory(search = '', specialty = '') {
       .populate({
         path: 'userId',
         select: 'name email phone avatar status',
-        match: { status: 'active' },
+        match: { status: { $ne: 'suspended' } },
       })
-      .sort({ rating: -1, isVerified: -1 })
+      .sort({ isVerified: -1, rating: -1, createdAt: -1 })
       .lean();
 
-    // Filter out if user matching didn't return an active user
+    // Filter out if user matching didn't return a valid user
     let filtered = doctors.filter((doc) => doc.userId);
 
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
         (doc) =>
-          doc.userId.name.toLowerCase().includes(q) ||
-          doc.specialty.toLowerCase().includes(q) ||
-          (doc.clinicAddress?.city && doc.clinicAddress.city.toLowerCase().includes(q))
+          doc.userId.name?.toLowerCase().includes(q) ||
+          doc.userId.email?.toLowerCase().includes(q) ||
+          doc.specialty?.toLowerCase().includes(q) ||
+          doc.qualifications?.some((qual) => qual.toLowerCase().includes(q)) ||
+          (doc.clinicAddress?.city && doc.clinicAddress.city.toLowerCase().includes(q)) ||
+          (doc.clinicAddress?.clinicName && doc.clinicAddress.clinicName.toLowerCase().includes(q))
       );
     }
 

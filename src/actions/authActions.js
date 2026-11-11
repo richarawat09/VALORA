@@ -8,6 +8,7 @@ import AuditLog from '@/models/AuditLog';
 import { hashPassword, comparePassword, setSessionCookie, clearSessionCookie, getSessionUser } from '@/lib/auth';
 import { isValidEmail, isValidPassword } from '@/lib/validations';
 import { seedInitialData } from '@/lib/seed';
+import { revalidatePath } from 'next/cache';
 
 /**
  * Register a new user (Patient or Doctor)
@@ -46,8 +47,8 @@ export async function registerUser(formData) {
 
     const passwordHash = await hashPassword(password);
 
-    // Initial status: Doctor accounts default to pending_verification if registering
-    const initialStatus = role === 'doctor' ? 'pending_verification' : 'active';
+    // Initial status: All valid registrations active immediately
+    const initialStatus = 'active';
 
     const newUser = await User.create({
       name,
@@ -102,6 +103,11 @@ export async function registerUser(formData) {
 
     // Auto-login session
     await setSessionCookie(newUser);
+
+    revalidatePath('/patient/doctors');
+    revalidatePath('/admin/doctors');
+    revalidatePath('/admin/patients');
+    revalidatePath('/admin/dashboard');
 
     return {
       success: true,

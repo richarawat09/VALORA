@@ -1,6 +1,8 @@
 import { getDoctorsDirectory } from '@/actions/doctorActions';
 import DoctorsDirectoryClient from './DoctorsDirectoryClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PatientDoctorsPage({ searchParams }) {
   const sp = await searchParams;
   const search = sp?.search || '';

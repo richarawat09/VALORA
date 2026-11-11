@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '@/components/ui/Modal';
 import { bookAppointment } from '@/actions/appointmentActions';
+import { getDoctorsDirectory } from '@/actions/doctorActions';
 import { Calendar, Clock, Stethoscope, AlertCircle, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function AppointmentBookingModal({ isOpen, onClose, selectedDoctor = null, doctorsList = [] }) {
   const router = useRouter();
   const [doctorId, setDoctorId] = useState(selectedDoctor?.userId?._id || selectedDoctor?._id || '');
+  const [availableDoctors, setAvailableDoctors] = useState(doctorsList || []);
   const [date, setDate] = useState('');
   const [timeSlot, setTimeSlot] = useState('10:00 AM');
   const [type, setType] = useState('in-person');
@@ -16,6 +18,24 @@ export default function AppointmentBookingModal({ isOpen, onClose, selectedDocto
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (doctorsList && doctorsList.length > 0) {
+      setAvailableDoctors(doctorsList);
+    } else if (isOpen) {
+      getDoctorsDirectory().then((res) => {
+        if (res.success && res.doctors) {
+          setAvailableDoctors(res.doctors);
+        }
+      });
+    }
+  }, [doctorsList, isOpen]);
+
+  useEffect(() => {
+    if (selectedDoctor) {
+      setDoctorId(selectedDoctor.userId?._id || selectedDoctor._id || '');
+    }
+  }, [selectedDoctor]);
 
   const timeSlots = [
     '09:00 AM', '09:45 AM', '10:30 AM', '11:15 AM',
@@ -99,7 +119,7 @@ export default function AppointmentBookingModal({ isOpen, onClose, selectedDocto
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="">-- Choose a doctor --</option>
-              {doctorsList.map((doc) => (
+              {availableDoctors.map((doc) => (
                 <option key={doc._id} value={doc.userId?._id || doc._id}>
                   {doc.userId?.name || doc.name} ({doc.specialty}) - ₹{doc.consultationFee || 500}
                 </option>

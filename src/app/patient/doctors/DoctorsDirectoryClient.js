@@ -80,13 +80,21 @@ export default function DoctorsDirectoryClient({ initialDoctors, initialSearch, 
                   </div>
                 </div>
 
-                {doc.isVerified && (
+                {doc.isVerified ? (
                   <span
                     title="Verified Medical Practitioner"
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                     Verified
+                  </span>
+                ) : (
+                  <span
+                    title="Registered Medical Practitioner"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full"
+                  >
+                    <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+                    Practitioner
                   </span>
                 )}
               </div>
