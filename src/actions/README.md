@@ -11,3 +11,4 @@ In Next.js App Router, each file in this directory uses the `'use server'` direc
 - **`medicalRecordActions.js`**: Encrypted medical document upload and HIPAA audit logging controllers.
 - **`prescriptionActions.js`**: Electronic prescription generation and medication dispensing controllers.
 - **`adminActions.js`**: Doctor license verification, system analytics, and user moderation controllers.
+

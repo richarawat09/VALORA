@@ -125,3 +125,4 @@ VALORA uses **MongoDB** as a document database with **Mongoose** as the Object D
 > 1. ***Frontend**: `src/components` aur `src/app` me hai. Yahan UI, responsive forms, charts aur Patient/Doctor/Admin ke interactive dashboards hain.*
 > 2. ***Backend**: `src/actions` aur `src/lib` me hai. Next.js ke Server Actions (`'use server'`) controllers ki tarah kaam karte hain jo JWT authentication, input validation aur business logic handle karte hain.*
 > 3. ***Database**: `src/models` aur `src/lib/mongodb.js` me hai. MongoDB Atlas database use ho raha hai jisme 10 Mongoose schemas hain jo user data, medical records, doctor consultations aur prescriptions ko securely store karte hain."*
+

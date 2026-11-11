@@ -12,3 +12,4 @@ This directory defines the 10 data models and Mongoose ODM schemas stored in the
 - **`Review.js`**: Verified patient feedback and official doctor replies.
 - **`DoctorPatientAccess.js`**: Secure medical record sharing and access permissions.
 - **`AuditLog.js`**: Immutable audit trails for medical compliance and data security.
+
