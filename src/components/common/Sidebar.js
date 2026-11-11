@@ -17,6 +17,7 @@ import {
   Stethoscope,
   FolderHeart,
   ChevronRight,
+  Star,
 } from 'lucide-react';
 
 export default function Sidebar({ role = 'patient' }) {
@@ -37,8 +38,7 @@ export default function Sidebar({ role = 'patient' }) {
     { label: 'Doctor Profile', href: '/doctor/profile', icon: Stethoscope },
     { label: 'My Patients', href: '/doctor/patients', icon: Users },
     { label: 'Appointments', href: '/doctor/appointments', icon: Calendar },
-    { label: 'Consultations', href: '/doctor/consultations', icon: ClipboardList },
-    { label: 'Prescriptions', href: '/doctor/prescriptions', icon: Pill },
+    { label: 'Patient Reviews', href: '/doctor/reviews', icon: Star },
   ];
 
   const adminNav = [

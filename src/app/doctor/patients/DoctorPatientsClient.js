@@ -1,14 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, ClipboardList, Pill, UploadCloud, Search, HeartPulse, AlertCircle, Phone, Mail } from 'lucide-react';
+import {
+  Users,
+  ClipboardList,
+  Pill,
+  UploadCloud,
+  Search,
+  HeartPulse,
+  AlertCircle,
+  Phone,
+  Mail,
+  FolderHeart,
+  FileText,
+  Stethoscope,
+  Eye,
+  Calendar,
+} from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import ConsultationNoteModal from '@/components/forms/ConsultationNoteModal';
 import PrescriptionModal from '@/components/forms/PrescriptionModal';
 import MedicalRecordUploadModal from '@/components/forms/MedicalRecordUploadModal';
+import PatientMedicalProfileModal from '@/components/doctor/PatientMedicalProfileModal';
 
 export default function DoctorPatientsClient({ initialPatients }) {
   const [search, setSearch] = useState('');
+  const [selectedPatientForHistory, setSelectedPatientForHistory] = useState(null);
   const [selectedPatientForConsult, setSelectedPatientForConsult] = useState(null);
   const [selectedPatientForRx, setSelectedPatientForRx] = useState(null);
   const [selectedPatientForUpload, setSelectedPatientForUpload] = useState(null);
@@ -86,34 +103,46 @@ export default function DoctorPatientsClient({ initialPatients }) {
               </div>
             </div>
 
-            {/* Quick Doctor Actions */}
-            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+            <div className="space-y-2.5 pt-2 border-t border-slate-100">
+              {/* Primary: Full Medical Profile & History inspection */}
               <button
                 type="button"
-                onClick={() => setSelectedPatientForConsult(item.user)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 transition-colors"
+                onClick={() => setSelectedPatientForHistory(item.user)}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200/80 transition-all flex items-center justify-center gap-2 shadow-2xs group"
               >
-                <ClipboardList className="w-3.5 h-3.5" />
-                <span>Add Note</span>
+                <FolderHeart className="w-4 h-4 text-teal-600 group-hover:scale-110 transition-transform" />
+                <span>View Medical History & Prior Consultations</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setSelectedPatientForRx(item.user)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
-              >
-                <Pill className="w-3.5 h-3.5" />
-                <span>Write Rx</span>
-              </button>
+              {/* Secondary Doctor Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPatientForConsult(item.user)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-700 hover:bg-teal-50 border border-slate-200 transition-colors"
+                >
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  <span>Clinical Note</span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setSelectedPatientForUpload(item.user)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
-              >
-                <UploadCloud className="w-3.5 h-3.5" />
-                <span>Upload Report</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPatientForRx(item.user)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 hover:bg-emerald-50 border border-slate-200 transition-colors"
+                >
+                  <Pill className="w-3.5 h-3.5" />
+                  <span>Issue Rx</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedPatientForUpload(item.user)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:bg-purple-50 border border-slate-200 transition-colors"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  <span>Upload Report</span>
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -128,6 +157,18 @@ export default function DoctorPatientsClient({ initialPatients }) {
           </div>
         )}
       </div>
+
+      {/* Comprehensive Patient Medical History Modal */}
+      {selectedPatientForHistory && (
+        <PatientMedicalProfileModal
+          isOpen={Boolean(selectedPatientForHistory)}
+          onClose={() => setSelectedPatientForHistory(null)}
+          patient={selectedPatientForHistory}
+          onOpenConsultModal={(p) => setSelectedPatientForConsult(p)}
+          onOpenRxModal={(p) => setSelectedPatientForRx(p)}
+          onOpenUploadModal={(p) => setSelectedPatientForUpload(p)}
+        />
+      )}
 
       {selectedPatientForConsult && (
         <ConsultationNoteModal
@@ -155,4 +196,3 @@ export default function DoctorPatientsClient({ initialPatients }) {
     </div>
   );
 }
-

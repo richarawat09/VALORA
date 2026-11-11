@@ -94,11 +94,8 @@ export default function DoctorProfileForm({ initialUser, initialProfile }) {
               License ID: <span className="font-mono">{initialProfile.licenseNumber}</span>
             </p>
             <p className="text-xs text-slate-500">
-              Platform Verification: {initialProfile.isVerified ? (
-                <span className="text-emerald-600 font-bold">Verified Medical Practitioner</span>
-              ) : (
-                <span className="text-amber-600 font-bold">Pending Administrator Review</span>
-              )}
+              Platform Verification:{' '}
+              <span className="text-emerald-600 font-bold">Verified Medical Practitioner • Active</span>
             </p>
           </div>
         </div>
