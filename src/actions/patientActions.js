@@ -22,6 +22,9 @@ export async function getPatientDashboardData() {
     await connectDB();
 
     const patientUser = await User.findById(session.id).select('-passwordHash').lean();
+    if (!patientUser) {
+      return { success: false, error: 'Session expired. Please sign in again.' };
+    }
     const patientProfile = await Patient.findOne({ userId: session.id }).lean();
 
     // Fetch upcoming appointments
@@ -90,6 +93,9 @@ export async function getPatientProfile() {
     await connectDB();
 
     const user = await User.findById(session.id).select('-passwordHash').lean();
+    if (!user) {
+      return { success: false, error: 'Session expired. Please sign in again.' };
+    }
     let profile = await Patient.findOne({ userId: session.id }).lean();
 
     if (!profile) {

@@ -1,12 +1,14 @@
 'use server';
 
+import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb';
 import Appointment from '@/models/Appointment';
 import Doctor from '@/models/Doctor';
 import User from '@/models/User';
 import DoctorPatientAccess from '@/models/DoctorPatientAccess';
 import AuditLog from '@/models/AuditLog';
-import { requireAuth } from '@/lib/auth';
+import { requireAuth, requireRole } from '@/lib/auth';
+import { APPOINTMENT_STATUSES } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -14,7 +16,7 @@ import { revalidatePath } from 'next/cache';
  */
 export async function bookAppointment(formData) {
   try {
-    const session = await requireAuth();
+    const session = await requireRole('patient');
     await connectDB();
 
     const doctorId = formData.get('doctorId')?.toString();
@@ -25,6 +27,10 @@ export async function bookAppointment(formData) {
 
     if (!doctorId || !appointmentDateStr || !timeSlot || !reason) {
       return { success: false, error: 'Doctor, date, time slot, and consultation reason are required' };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(doctorId)) {
+      return { success: false, error: 'Selected doctor is invalid' };
     }
 
     const doctorUser = await User.findById(doctorId);
@@ -90,6 +96,7 @@ export async function bookAppointment(formData) {
     revalidatePath('/patient/appointments');
     revalidatePath('/patient/dashboard');
     revalidatePath('/doctor/appointments');
+    revalidatePath('/doctor/patients');
     revalidatePath('/doctor/dashboard');
 
     return {
@@ -130,9 +137,18 @@ export async function getUserAppointments(filter = {}) {
       .sort({ appointmentDate: -1, createdAt: -1 })
       .lean();
 
+    const sanitizedAppointments =
+      session.role === 'doctor'
+        ? appointments.map((apt) =>
+            apt.status === 'cancelled' && apt.patientId
+              ? { ...apt, patientId: { _id: apt.patientId._id, name: apt.patientId.name } }
+              : apt
+          )
+        : appointments;
+
     return {
       success: true,
-      appointments: JSON.parse(JSON.stringify(appointments)),
+      appointments: JSON.parse(JSON.stringify(sanitizedAppointments)),
     };
   } catch (error) {
     console.error('getUserAppointments error:', error);
@@ -148,6 +164,14 @@ export async function updateAppointmentStatus(appointmentId, status, notes = '')
     const session = await requireAuth();
     await connectDB();
 
+    if (!mongoose.Types.ObjectId.isValid(String(appointmentId))) {
+      return { success: false, error: 'Invalid appointment ID' };
+    }
+
+    if (!APPOINTMENT_STATUSES.includes(status)) {
+      return { success: false, error: 'Invalid appointment status' };
+    }
+
     const appointment = await Appointment.findById(appointmentId);
     if (!appointment) {
       return { success: false, error: 'Appointment not found' };
@@ -162,12 +186,38 @@ export async function updateAppointmentStatus(appointmentId, status, notes = '')
       return { success: false, error: 'Unauthorized to modify this appointment' };
     }
 
+    if (isPatient && !isDoctor && !isAdmin && status !== 'cancelled') {
+      return { success: false, error: 'Patients can only cancel appointments' };
+    }
+
     appointment.status = status;
     if (notes) {
       appointment.notes = notes;
     }
 
     await appointment.save();
+
+    if (status === 'cancelled') {
+      const hasOtherActiveAppointment = await Appointment.exists({
+        _id: { $ne: appointment._id },
+        patientId: appointment.patientId,
+        doctorId: appointment.doctorId,
+        status: { $ne: 'cancelled' },
+      });
+
+      if (!hasOtherActiveAppointment) {
+        await DoctorPatientAccess.findOneAndUpdate(
+          { patientId: appointment.patientId, doctorId: appointment.doctorId },
+          { status: 'revoked' }
+        );
+      }
+    } else {
+      await DoctorPatientAccess.findOneAndUpdate(
+        { patientId: appointment.patientId, doctorId: appointment.doctorId },
+        { status: 'granted', accessLevel: 'full' },
+        { upsert: true }
+      );
+    }
 
     await AuditLog.create({
       userId: session.id,
@@ -178,7 +228,10 @@ export async function updateAppointmentStatus(appointmentId, status, notes = '')
     });
 
     revalidatePath('/patient/appointments');
+    revalidatePath('/patient/dashboard');
     revalidatePath('/doctor/appointments');
+    revalidatePath('/doctor/patients');
+    revalidatePath('/doctor/dashboard');
     revalidatePath('/admin/appointments');
 
     return { success: true, message: `Appointment marked as ${status}` };

@@ -5,6 +5,7 @@ import MedicalRecord from '@/models/MedicalRecord';
 import DoctorPatientAccess from '@/models/DoctorPatientAccess';
 import AuditLog from '@/models/AuditLog';
 import { requireAuth } from '@/lib/auth';
+import { hasDoctorAppointmentAccess } from '@/lib/patientAccess';
 import { uploadMedicalDocument, deleteMedicalDocument } from '@/lib/cloudStorage';
 import { RECORD_TYPES } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
@@ -26,7 +27,20 @@ export async function uploadMedicalRecordAction(formData) {
 
     // Target patient
     let patientId = formData.get('patientId')?.toString();
-    if (!patientId || session.role === 'patient') {
+    if (session.role === 'patient') {
+      patientId = session.id;
+    } else if (session.role === 'doctor') {
+      if (!patientId) {
+        return { success: false, error: 'Patient ID is required' };
+      }
+      const isAuthorized = await hasDoctorAppointmentAccess(session.id, patientId);
+      if (!isAuthorized) {
+        return {
+          success: false,
+          error: 'Access denied: Medical documents can only be uploaded for patients with an appointment request.',
+        };
+      }
+    } else if (!patientId) {
       patientId = session.id;
     }
 
@@ -92,6 +106,7 @@ export async function uploadMedicalRecordAction(formData) {
     revalidatePath('/patient/medical-records');
     revalidatePath('/patient/dashboard');
     revalidatePath('/doctor/patients');
+    revalidatePath('/doctor/appointments');
 
     return {
       success: true,
@@ -119,20 +134,13 @@ export async function getMedicalRecords(filter = {}) {
       query.patientId = session.id;
     } else if (session.role === 'doctor') {
       if (filter.patientId) {
-        // Verify doctor has access to this patient
-        const access = await DoctorPatientAccess.findOne({
-          doctorId: session.id,
-          patientId: filter.patientId,
-          status: 'granted',
-        });
-
-        if (!access) {
-          // If no formal access, verify if they have shared an appointment
-          const Appointment = (await import('@/models/Appointment')).default;
-          const hasApt = await Appointment.exists({ doctorId: session.id, patientId: filter.patientId });
-          if (!hasApt) {
-            return { success: false, error: 'Access denied: Patient has not authorized record viewing', records: [] };
-          }
+        const isAuthorized = await hasDoctorAppointmentAccess(session.id, filter.patientId);
+        if (!isAuthorized) {
+          return {
+            success: false,
+            error: 'Access denied: Patient has not applied for an appointment with you',
+            records: [],
+          };
         }
         query.patientId = filter.patientId;
       } else {

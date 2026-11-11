@@ -7,6 +7,7 @@ import User from '@/models/User';
 import Doctor from '@/models/Doctor';
 import AuditLog from '@/models/AuditLog';
 import { requireAuth, requireRole } from '@/lib/auth';
+import { hasDoctorAppointmentAccess, verifyDoctorPatientAppointment } from '@/lib/patientAccess';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -26,6 +27,14 @@ export async function createPrescriptionAction(formData) {
 
     if (!patientId) {
       return { success: false, error: 'Patient ID is required' };
+    }
+
+    const isAuthorized = await verifyDoctorPatientAppointment(session.id, patientId, appointmentId);
+    if (!isAuthorized) {
+      return {
+        success: false,
+        error: 'Access denied: Prescriptions can only be issued for patients who applied for an appointment with you.',
+      };
     }
 
     let medications = [];
@@ -79,6 +88,8 @@ export async function createPrescriptionAction(formData) {
     });
 
     revalidatePath('/doctor/prescriptions');
+    revalidatePath('/doctor/patients');
+    revalidatePath('/doctor/appointments');
     revalidatePath('/patient/prescriptions');
     revalidatePath('/patient/history');
 
@@ -107,6 +118,14 @@ export async function getPrescriptions(filter = {}) {
       query.patientId = session.id;
     } else if (session.role === 'doctor') {
       if (filter.patientId) {
+        const isAuthorized = await hasDoctorAppointmentAccess(session.id, filter.patientId);
+        if (!isAuthorized) {
+          return {
+            success: false,
+            error: 'Access denied: Patient has not applied for an appointment with you',
+            prescriptions: [],
+          };
+        }
         query.patientId = filter.patientId;
       } else {
         query.doctorId = session.id;

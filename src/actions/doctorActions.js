@@ -12,6 +12,7 @@ import DoctorPatientAccess from '@/models/DoctorPatientAccess';
 import AuditLog from '@/models/AuditLog';
 import Review from '@/models/Review';
 import { requireAuth, requireRole } from '@/lib/auth';
+import { hasDoctorAppointmentAccess, verifyDoctorPatientAppointment } from '@/lib/patientAccess';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -23,6 +24,9 @@ export async function getDoctorDashboardData() {
     await connectDB();
 
     const doctorUser = await User.findById(session.id).select('-passwordHash').lean();
+    if (!doctorUser) {
+      return { success: false, error: 'Session expired. Please sign in again.' };
+    }
     const doctorProfile = await Doctor.findOne({ userId: session.id }).lean();
 
     const todayStart = new Date();
@@ -30,10 +34,11 @@ export async function getDoctorDashboardData() {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    // Today's appointments
+    // Today's active/requested appointments
     const todaysAppointments = await Appointment.find({
       doctorId: session.id,
       appointmentDate: { $gte: todayStart, $lte: todayEnd },
+      status: { $ne: 'cancelled' },
     })
       .populate('patientId', 'name email phone avatar')
       .sort({ timeSlot: 1 })
@@ -43,7 +48,7 @@ export async function getDoctorDashboardData() {
     const upcomingAppointments = await Appointment.find({
       doctorId: session.id,
       appointmentDate: { $gt: todayEnd },
-      status: { $in: ['scheduled', 'confirmed'] },
+      status: { $in: ['scheduled', 'confirmed', 'rescheduled'] },
     })
       .populate('patientId', 'name email phone avatar')
       .sort({ appointmentDate: 1 })
@@ -58,9 +63,15 @@ export async function getDoctorDashboardData() {
       .lean();
 
     // Stats
-    const totalAppointments = await Appointment.countDocuments({ doctorId: session.id });
+    const totalAppointments = await Appointment.countDocuments({
+      doctorId: session.id,
+      status: { $ne: 'cancelled' },
+    });
     const completedConsultations = await Consultation.countDocuments({ doctorId: session.id });
-    const distinctPatients = await Appointment.distinct('patientId', { doctorId: session.id });
+    const distinctPatients = await Appointment.distinct('patientId', {
+      doctorId: session.id,
+      status: { $ne: 'cancelled' },
+    });
 
     return {
       success: true,
@@ -93,6 +104,9 @@ export async function getDoctorProfile() {
     await connectDB();
 
     const user = await User.findById(session.id).select('-passwordHash').lean();
+    if (!user) {
+      return { success: false, error: 'Session expired. Please sign in again.' };
+    }
     let profile = await Doctor.findOne({ userId: session.id }).lean();
 
     if (!profile) {
@@ -255,54 +269,50 @@ export async function getDoctorsDirectory(search = '', specialty = '') {
 }
 
 /**
- * Get distinct patients for a doctor
+ * Get distinct patients for a doctor (only patients who applied for a non-cancelled appointment)
  */
 export async function getDoctorPatients() {
   try {
     const session = await requireRole('doctor');
     await connectDB();
 
-    // Find patients with appointments or granted access
-    let appointments = await Appointment.find({ doctorId: session.id })
+    const appointments = await Appointment.find({
+      doctorId: session.id,
+      status: { $ne: 'cancelled' },
+    })
       .populate('patientId', 'name email phone avatar')
-      .sort({ appointmentDate: -1 })
+      .sort({ appointmentDate: -1, createdAt: -1 })
       .lean();
 
-    // If this doctor has no appointments yet, link a patient so doctor has patients in caseload
-    if (appointments.length === 0) {
-      const anyPatient = await User.findOne({ role: 'patient' }).lean();
-      if (anyPatient) {
-        await Appointment.create({
-          patientId: anyPatient._id,
-          doctorId: session.id,
-          appointmentDate: new Date(),
-          timeSlot: '10:30 AM',
-          type: 'in-person',
-          status: 'confirmed',
-          reason: 'Comprehensive health checkup & prior records review',
-          fee: 800,
-        });
-
-        appointments = await Appointment.find({ doctorId: session.id })
-          .populate('patientId', 'name email phone avatar')
-          .sort({ appointmentDate: -1 })
-          .lean();
-      }
-    }
+    const revokedAccessDocs = await DoctorPatientAccess.find({
+      doctorId: session.id,
+      status: 'revoked',
+    })
+      .select('patientId')
+      .lean();
+    const revokedSet = new Set(revokedAccessDocs.map((doc) => doc.patientId.toString()));
 
     const patientMap = new Map();
 
     for (const apt of appointments) {
-      if (apt.patientId && !patientMap.has(apt.patientId._id.toString())) {
+      const patientIdStr = apt.patientId?._id?.toString();
+      if (!patientIdStr || revokedSet.has(patientIdStr)) {
+        continue;
+      }
+
+      if (!patientMap.has(patientIdStr)) {
         const patientDoc = await Patient.findOne({ userId: apt.patientId._id }).lean();
-        patientMap.set(apt.patientId._id.toString(), {
+        patientMap.set(patientIdStr, {
           user: apt.patientId,
           profile: patientDoc || {},
           lastAppointment: apt.appointmentDate,
+          latestAppointmentStatus: apt.status,
+          latestAppointmentReason: apt.reason,
+          latestAppointmentId: apt._id,
           totalAppointments: 1,
         });
-      } else if (apt.patientId) {
-        const existing = patientMap.get(apt.patientId._id.toString());
+      } else {
+        const existing = patientMap.get(patientIdStr);
         existing.totalAppointments += 1;
       }
     }
@@ -341,6 +351,14 @@ export async function saveConsultationNotes(formData) {
 
     if (!patientId || !diagnosis) {
       return { success: false, error: 'Patient ID and Diagnosis are required' };
+    }
+
+    const isAuthorized = await verifyDoctorPatientAppointment(session.id, patientId, appointmentId);
+    if (!isAuthorized) {
+      return {
+        success: false,
+        error: 'Access denied: Consultation notes can only be recorded for patients with an appointment request.',
+      };
     }
 
     const symptoms = symptomsRaw ? symptomsRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
@@ -385,6 +403,8 @@ export async function saveConsultationNotes(formData) {
 
     revalidatePath('/doctor/consultations');
     revalidatePath('/doctor/dashboard');
+    revalidatePath('/doctor/patients');
+    revalidatePath('/doctor/appointments');
     revalidatePath('/patient/history');
 
     return {
@@ -434,7 +454,18 @@ export async function getPatientFullHistoryForDoctor(patientId) {
       return { success: false, error: 'Patient ID is required' };
     }
 
+    const isAuthorized = await hasDoctorAppointmentAccess(session.id, patientId);
+    if (!isAuthorized) {
+      return {
+        success: false,
+        error: 'Access denied: Patient profile is only accessible after the patient applies for an appointment with you.',
+      };
+    }
+
     const patientUser = await User.findById(patientId).select('-passwordHash').lean();
+    if (!patientUser) {
+      return { success: false, error: 'Patient record not found' };
+    }
     const patientProfile = await Patient.findOne({ userId: patientId }).lean();
 
     // 1. All medical records uploaded by or for this patient

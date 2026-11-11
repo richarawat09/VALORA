@@ -89,23 +89,29 @@ export default function PatientMedicalProfileModal({
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-xl font-black text-slate-900">{user.name}</h2>
-                    <Badge variant="primary">{profile.bloodGroup || 'Blood Group: N/A'}</Badge>
-                    <span className="text-xs text-slate-500 font-medium capitalize">
-                      {profile.gender || 'Patient'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
-                    <span className="flex items-center gap-1">
-                      <Mail className="w-3.5 h-3.5 text-slate-400" />
-                      {user.email}
-                    </span>
-                    {user.phone && (
-                      <span className="flex items-center gap-1">
-                        <Phone className="w-3.5 h-3.5 text-slate-400" />
-                        {user.phone}
-                      </span>
+                    {!loading && !error && historyData && (
+                      <>
+                        <Badge variant="primary">{profile.bloodGroup || 'Blood Group: N/A'}</Badge>
+                        <span className="text-xs text-slate-500 font-medium capitalize">
+                          {profile.gender || 'Patient'}
+                        </span>
+                      </>
                     )}
                   </div>
+                  {!loading && !error && historyData && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                      <span className="flex items-center gap-1">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        {user.email}
+                      </span>
+                      {user.phone && (
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3.5 h-3.5 text-slate-400" />
+                          {user.phone}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -118,123 +124,137 @@ export default function PatientMedicalProfileModal({
             </div>
 
             {/* Quick Clinical Badges */}
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Allergies</span>
-                <span className="font-semibold text-rose-600 truncate block">
-                  {profile.allergies?.length > 0 ? profile.allergies.join(', ') : 'None Reported'}
-                </span>
-              </div>
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Chronic Conditions</span>
-                <span className="font-semibold text-slate-800 truncate block">
-                  {profile.chronicConditions?.length > 0
-                    ? profile.chronicConditions.join(', ')
-                    : 'None Reported'}
-                </span>
-              </div>
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Emergency Contact</span>
-                <span className="font-semibold text-slate-800 truncate block">
-                  {profile.emergencyContact?.name
-                    ? `${profile.emergencyContact.name} (${profile.emergencyContact.relation || 'Contact'})`
-                    : 'Not Specified'}
-                </span>
-              </div>
-              <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
-                <span className="text-[10px] uppercase font-bold text-slate-400 block">Insurance</span>
-                <span className="font-semibold text-slate-800 truncate block">
-                  {profile.insuranceProvider || 'Direct / Self Pay'}
-                </span>
-              </div>
-            </div>
+            {!loading && !error && historyData && (
+              <>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Allergies</span>
+                    <span className="font-semibold text-rose-600 truncate block">
+                      {profile.allergies?.length > 0 ? profile.allergies.join(', ') : 'None Reported'}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Chronic Conditions</span>
+                    <span className="font-semibold text-slate-800 truncate block">
+                      {profile.chronicConditions?.length > 0
+                        ? profile.chronicConditions.join(', ')
+                        : 'None Reported'}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Emergency Contact</span>
+                    <span className="font-semibold text-slate-800 truncate block">
+                      {profile.emergencyContact?.name
+                        ? `${profile.emergencyContact.name} (${profile.emergencyContact.relation || 'Contact'})`
+                        : 'Not Specified'}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200/80">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Insurance</span>
+                    <span className="font-semibold text-slate-800 truncate block">
+                      {profile.insuranceProvider || 'Direct / Self Pay'}
+                    </span>
+                  </div>
+                </div>
 
-            {/* Quick Action Bar for Current Doctor */}
-            <div className="mt-4 pt-3 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2">
-              <span className="text-xs font-bold text-slate-600">
-                Doctor Actions for {user.name?.split(' ')[0]}:
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenConsultModal(user);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-800 bg-teal-100/70 hover:bg-teal-200 transition-colors"
-                >
-                  <ClipboardList className="w-3.5 h-3.5" />
-                  <span>+ Add Clinical Note</span>
-                </button>
+                {/* Quick Action Bar for Current Doctor */}
+                {(onOpenConsultModal || onOpenRxModal || onOpenUploadModal) && (
+                  <div className="mt-4 pt-3 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-600">
+                      Doctor Actions for {user.name?.split(' ')[0]}:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {onOpenConsultModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenConsultModal(user);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-teal-800 bg-teal-100/70 hover:bg-teal-200 transition-colors"
+                        >
+                          <ClipboardList className="w-3.5 h-3.5" />
+                          <span>+ Add Clinical Note</span>
+                        </button>
+                      )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenRxModal(user);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200 transition-colors"
-                >
-                  <Pill className="w-3.5 h-3.5" />
-                  <span>+ Issue Prescription</span>
-                </button>
+                      {onOpenRxModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenRxModal(user);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 bg-emerald-100/70 hover:bg-emerald-200 transition-colors"
+                        >
+                          <Pill className="w-3.5 h-3.5" />
+                          <span>+ Issue Prescription</span>
+                        </button>
+                      )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onOpenUploadModal(user);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-800 bg-purple-100/70 hover:bg-purple-200 transition-colors"
-                >
-                  <UploadCloud className="w-3.5 h-3.5" />
-                  <span>+ Upload Report</span>
-                </button>
-              </div>
-            </div>
+                      {onOpenUploadModal && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onClose();
+                            onOpenUploadModal(user);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-purple-800 bg-purple-100/70 hover:bg-purple-200 transition-colors"
+                        >
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>+ Upload Report</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Tab Navigation */}
-          <div className="px-6 border-b border-slate-100 flex items-center gap-2 overflow-x-auto bg-white shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveTab('consultations')}
-              className={`py-3.5 px-3 border-b-2 text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'consultations'
-                  ? 'border-teal-600 text-teal-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <Stethoscope className="w-4 h-4" />
-              <span>Previous Doctor Consultations ({consultations.length})</span>
-            </button>
+          {!loading && !error && historyData && (
+            <div className="px-6 border-b border-slate-100 flex items-center gap-2 overflow-x-auto bg-white shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab('consultations')}
+                className={`py-3.5 px-3 border-b-2 text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === 'consultations'
+                    ? 'border-teal-600 text-teal-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <Stethoscope className="w-4 h-4" />
+                <span>Previous Doctor Consultations ({consultations.length})</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('records')}
-              className={`py-3.5 px-3 border-b-2 text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'records'
-                  ? 'border-teal-600 text-teal-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <FolderHeart className="w-4 h-4" />
-              <span>Medical Reports & Scans ({records.length})</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('records')}
+                className={`py-3.5 px-3 border-b-2 text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === 'records'
+                    ? 'border-teal-600 text-teal-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <FolderHeart className="w-4 h-4" />
+                <span>Medical Reports & Scans ({records.length})</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('prescriptions')}
-              className={`py-3.5 px-3 border-b-2 text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'prescriptions'
-                  ? 'border-teal-600 text-teal-700'
-                  : 'border-transparent text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <Pill className="w-4 h-4" />
-              <span>Prescriptions History ({prescriptions.length})</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('prescriptions')}
+                className={`py-3.5 px-3 border-b-2 text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+                  activeTab === 'prescriptions'
+                    ? 'border-teal-600 text-teal-700'
+                    : 'border-transparent text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                <Pill className="w-4 h-4" />
+                <span>Prescriptions History ({prescriptions.length})</span>
+              </button>
+            </div>
+          )}
 
           {/* Modal Body / Tab Content */}
           <div className="p-6 overflow-y-auto space-y-4 flex-1">
@@ -253,7 +273,7 @@ export default function PatientMedicalProfileModal({
             )}
 
             {/* TAB 1: PREVIOUS DOCTOR CONSULTATIONS */}
-            {!loading && activeTab === 'consultations' && (
+            {!loading && !error && historyData && activeTab === 'consultations' && (
               <div className="space-y-4">
                 {consultations.length > 0 ? (
                   consultations.map((c) => (
@@ -419,23 +439,25 @@ export default function PatientMedicalProfileModal({
                     <p className="text-xs text-slate-500 mt-1">
                       No doctor has documented consultations for this patient yet.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onOpenConsultModal(user);
-                      }}
-                      className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
-                    >
-                      Record First Consultation
-                    </button>
+                    {onOpenConsultModal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenConsultModal(user);
+                        }}
+                        className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+                      >
+                        Record First Consultation
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
             {/* TAB 2: MEDICAL REPORTS & SCANS */}
-            {!loading && activeTab === 'records' && (
+            {!loading && !error && historyData && activeTab === 'records' && (
               <div className="space-y-4">
                 {records.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -497,23 +519,25 @@ export default function PatientMedicalProfileModal({
                     <p className="text-xs text-slate-500 mt-1">
                       The patient does not have lab results or scan files uploaded yet.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onOpenUploadModal(user);
-                      }}
-                      className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
-                    >
-                      Upload Medical Report
-                    </button>
+                    {onOpenUploadModal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenUploadModal(user);
+                        }}
+                        className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 transition-colors"
+                      >
+                        Upload Medical Report
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
             {/* TAB 3: PRESCRIPTIONS HISTORY */}
-            {!loading && activeTab === 'prescriptions' && (
+            {!loading && !error && historyData && activeTab === 'prescriptions' && (
               <div className="space-y-4">
                 {prescriptions.length > 0 ? (
                   prescriptions.map((rx) => (
@@ -576,16 +600,18 @@ export default function PatientMedicalProfileModal({
                     <p className="text-xs text-slate-500 mt-1">
                       No electronic prescriptions have been issued to this patient yet.
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onClose();
-                        onOpenRxModal(user);
-                      }}
-                      className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
-                    >
-                      Issue First Prescription
-                    </button>
+                    {onOpenRxModal && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onOpenRxModal(user);
+                        }}
+                        className="mt-3 px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+                      >
+                        Issue First Prescription
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
