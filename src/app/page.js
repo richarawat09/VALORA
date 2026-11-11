@@ -8,13 +8,12 @@ import {
   Calendar,
   Lock,
   ArrowRight,
-  Database,
   BarChart3,
   Layers,
   Sparkles,
   CheckCircle2,
 } from 'lucide-react';
-import { getCurrentUser, seedDatabaseAction } from '@/actions/authActions';
+import { getCurrentUser } from '@/actions/authActions';
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -70,40 +69,6 @@ export default async function HomePage() {
                   </Link>
                 </>
               )}
-            </div>
-
-            {/* Quick Demo Credentials Banner */}
-            <div className="pt-8">
-              <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm text-left max-w-2xl mx-auto">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                    <Database className="w-4 h-4 text-teal-600" />
-                    <span>Quick Demo Credentials (Password: <code className="text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-mono">Valora@123</code>)</span>
-                  </div>
-                  <form action={seedDatabaseAction}>
-                    <button
-                      type="submit"
-                      className="text-[11px] font-semibold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg transition-colors border border-teal-200"
-                    >
-                      Initialize Sample Data
-                    </button>
-                  </form>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 text-xs">
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-bold text-teal-800 block">Patient</span>
-                    <span className="text-slate-600 font-mono text-[11px]">patient@valora.health</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-bold text-emerald-800 block">Doctor (Cardiology)</span>
-                    <span className="text-slate-600 font-mono text-[11px]">dr.sharma@valora.health</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-bold text-purple-800 block">System Admin</span>
-                    <span className="text-slate-600 font-mono text-[11px]">admin@valora.health</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
