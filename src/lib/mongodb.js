@@ -1,12 +1,30 @@
+import fs from 'fs';
+import path from 'path';
 import mongoose from 'mongoose';
 
 /**
- * Global cache for Mongoose and in-memory MongoDB across Next.js Server Actions and API invocations.
+ * Global cache for Mongoose and embedded MongoDB across Next.js Server Actions and API invocations.
  */
 let cached = global.mongoose;
 
 if (!cached) {
   cached = global.mongoose = { conn: null, promise: null, mongod: null, uri: null };
+}
+
+async function canConnect(uri, timeoutMs = 1000) {
+  let testConn;
+  try {
+    testConn = await mongoose.createConnection(uri, {
+      serverSelectionTimeoutMS: timeoutMs,
+    }).asPromise();
+    return true;
+  } catch {
+    return false;
+  } finally {
+    if (testConn) {
+      await testConn.close().catch(() => {});
+    }
+  }
 }
 
 async function getMongoURI() {
@@ -17,39 +35,64 @@ async function getMongoURI() {
     return envUri;
   }
 
-  // If we already spun up an in-memory server, reuse its URI
+  // If we already resolved or started a server in this process, reuse its URI
   if (cached.uri) {
     return cached.uri;
   }
 
-  // If local URI provided, first test if local mongod is listening
+  // If custom non-default local URI provided, use it directly
   if (envUri && !envUri.includes('127.0.0.1:27017') && !envUri.includes('localhost:27017')) {
     return envUri;
   }
 
-  // Test local 27017 connection with a short 1s timeout
-  try {
-    const testConn = await mongoose.createConnection('mongodb://127.0.0.1:27017/valora', {
-      serverSelectionTimeoutMS: 1200,
-    }).asPromise();
-    await testConn.close();
-    cached.uri = 'mongodb://127.0.0.1:27017/valora';
+  // 1. Check standard local MongoDB on 27017
+  const defaultLocalUri = 'mongodb://127.0.0.1:27017/valora';
+  if (await canConnect(defaultLocalUri, 1200)) {
+    cached.uri = defaultLocalUri;
     return cached.uri;
-  } catch (err) {
-    // Local MongoDB is not running, seamlessly start in-memory MongoDB
-    console.log('Local MongoDB not detected on 27017. Initializing embedded MongoDB engine...');
-    const { MongoMemoryServer } = await import('mongodb-memory-server');
-    if (!cached.mongod) {
+  }
+
+  // 2. Use persistent embedded MongoDB stored in .valora-db (unless explicitly disabled for tests)
+  const useEphemeral = process.env.VALORA_EPHEMERAL_DB === '1';
+  const persistentPort = 27018;
+  const persistentUri = `mongodb://127.0.0.1:${persistentPort}/valora`;
+
+  if (!useEphemeral && (await canConnect(persistentUri, 800))) {
+    cached.uri = persistentUri;
+    return cached.uri;
+  }
+
+  console.log(
+    useEphemeral
+      ? 'Initializing ephemeral embedded MongoDB engine...'
+      : 'Local MongoDB not detected on 27017. Initializing persistent embedded MongoDB engine...'
+  );
+
+  const { MongoMemoryServer } = await import('mongodb-memory-server');
+  if (!cached.mongod) {
+    if (useEphemeral) {
       cached.mongod = await MongoMemoryServer.create({
         instance: {
           dbName: 'valora',
         },
       });
+    } else {
+      const dbPath = path.join(process.cwd(), '.valora-db');
+      fs.mkdirSync(dbPath, { recursive: true });
+      cached.mongod = await MongoMemoryServer.create({
+        instance: {
+          dbName: 'valora',
+          dbPath,
+          storageEngine: 'wiredTiger',
+          port: persistentPort,
+        },
+      });
     }
-    cached.uri = cached.mongod.getUri();
-    console.log('Embedded MongoDB engine active at:', cached.uri);
-    return cached.uri;
   }
+
+  cached.uri = cached.mongod.getUri('valora');
+  console.log('Embedded MongoDB engine active at:', cached.uri);
+  return cached.uri;
 }
 
 async function connectDB() {
