@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Star, ShieldCheck, MapPin, Calendar, Stethoscope, Clock, Award } from 'lucide-react';
+import { Search, Star, ShieldCheck, MapPin, Calendar, Stethoscope, Clock, Award, MessageSquarePlus } from 'lucide-react';
 import { DOCTOR_SPECIALTIES } from '@/lib/validations';
 import AppointmentBookingModal from '@/components/forms/AppointmentBookingModal';
+import DoctorReviewModal from '@/components/forms/DoctorReviewModal';
 
 export default function DoctorsDirectoryClient({ initialDoctors, initialSearch, initialSpecialty }) {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function DoctorsDirectoryClient({ initialDoctors, initialSearch, 
   const [specialty, setSpecialty] = useState(initialSpecialty || '');
   const [selectedDoctorForBooking, setSelectedDoctorForBooking] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDoctorForReview, setSelectedDoctorForReview] = useState(null);
 
   const handleFilter = (e) => {
     e.preventDefault();
@@ -100,10 +102,13 @@ export default function DoctorsDirectoryClient({ initialDoctors, initialSearch, 
               </div>
 
               {/* Qualifications & Rating */}
-              <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+              <div className="flex items-center flex-wrap gap-2 text-xs text-slate-500 mb-3">
                 <span className="flex items-center gap-1 text-amber-500 font-bold">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  {doc.rating || 4.8}
+                  {doc.totalReviews > 0 ? doc.rating : 'New'}
+                  <span className="text-slate-400 font-medium">
+                    ({doc.totalReviews || 0})
+                  </span>
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
@@ -138,20 +143,30 @@ export default function DoctorsDirectoryClient({ initialDoctors, initialSearch, 
               </div>
             </div>
 
-            {/* Price & Book Button */}
-            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
+            {/* Price & Book / Review Buttons */}
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
               <div>
                 <span className="text-[10px] uppercase font-bold text-slate-400 block">Consultation</span>
                 <span className="text-base font-black text-slate-900">₹{doc.consultationFee || 500}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => handleBookClick(doc)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-xs transition-colors"
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Book Slot</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDoctorForReview(doc)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+                >
+                  <MessageSquarePlus className="w-3.5 h-3.5" />
+                  <span>Write Review</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBookClick(doc)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 shadow-xs transition-colors"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Book Slot</span>
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -173,6 +188,14 @@ export default function DoctorsDirectoryClient({ initialDoctors, initialSearch, 
             setSelectedDoctorForBooking(null);
           }}
           selectedDoctor={selectedDoctorForBooking}
+        />
+      )}
+
+      {selectedDoctorForReview && (
+        <DoctorReviewModal
+          isOpen={Boolean(selectedDoctorForReview)}
+          onClose={() => setSelectedDoctorForReview(null)}
+          doctor={selectedDoctorForReview}
         />
       )}
     </div>

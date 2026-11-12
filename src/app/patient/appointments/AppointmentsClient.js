@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateAppointmentStatus } from '@/actions/appointmentActions';
 import AppointmentBookingModal from '@/components/forms/AppointmentBookingModal';
+import DoctorReviewModal from '@/components/forms/DoctorReviewModal';
 import Badge from '@/components/ui/Badge';
-import { Calendar, Plus, Clock, User, XCircle, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar, Plus, Clock, Star } from 'lucide-react';
 
 export default function AppointmentsClient({ initialAppointments, initialStatus }) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState(initialStatus || 'all');
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedAppointmentForReview, setSelectedAppointmentForReview] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
   const [notification, setNotification] = useState('');
 
@@ -123,6 +125,17 @@ export default function AppointmentsClient({ initialAppointments, initialStatus 
 
             {/* Actions */}
             <div className="flex items-center gap-2 self-end md:self-center">
+              {['confirmed', 'completed'].includes(apt.status) && apt.doctorId?._id && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedAppointmentForReview(apt)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-colors"
+                >
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                  <span>Write Review</span>
+                </button>
+              )}
+
               {['scheduled', 'confirmed'].includes(apt.status) && (
                 <button
                   onClick={() => handleCancelAppointment(apt._id)}
@@ -149,6 +162,15 @@ export default function AppointmentsClient({ initialAppointments, initialStatus 
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
       />
+
+      {selectedAppointmentForReview && (
+        <DoctorReviewModal
+          isOpen={Boolean(selectedAppointmentForReview)}
+          onClose={() => setSelectedAppointmentForReview(null)}
+          doctor={selectedAppointmentForReview.doctorId}
+          defaultServiceType={selectedAppointmentForReview.reason}
+        />
+      )}
     </div>
   );
 }

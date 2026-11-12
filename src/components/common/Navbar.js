@@ -54,8 +54,8 @@ export default function Navbar({ user }) {
                 <span className="text-xl font-black tracking-tight text-slate-900 group-hover:text-teal-600 transition-colors">
                   VALORA
                 </span>
-                <span className="text-[10px] font-semibold tracking-wider text-teal-600 uppercase -mt-1">
-                  Health System
+                <span className="text-[9px] sm:text-[10px] font-semibold tracking-wider text-teal-600 uppercase -mt-0.5">
+                  Valuing Life, Empowering Care
                 </span>
               </div>
             </Link>

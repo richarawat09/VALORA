@@ -31,6 +31,7 @@ export default function Sidebar({ role = 'patient' }) {
     { label: 'Medical Records', href: '/patient/medical-records', icon: FolderHeart },
     { label: 'Prescriptions', href: '/patient/prescriptions', icon: Pill },
     { label: 'Medical History', href: '/patient/history', icon: Clock },
+    { label: 'Doctor Reviews', href: '/patient/reviews', icon: Star },
   ];
 
   const doctorNav = [

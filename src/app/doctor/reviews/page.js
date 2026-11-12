@@ -4,7 +4,7 @@ import DoctorReviewsClient from './DoctorReviewsClient';
 export default async function DoctorReviewsPage() {
   const res = await getDoctorReviewsAction();
   const reviews = res.success ? res.reviews : [];
-  const stats = res.success ? res.stats : { totalReviews: 0, averageRating: 5.0, fiveStar: 0, fourStar: 0, threeStar: 0 };
+  const stats = res.success ? res.stats : { totalReviews: 0, averageRating: 0, fiveStar: 0, fourStar: 0, threeStar: 0 };
 
   return (
     <div className="space-y-6">

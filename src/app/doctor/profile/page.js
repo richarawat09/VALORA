@@ -7,7 +7,7 @@ export default async function DoctorProfilePage() {
   const result = await getDoctorProfile();
   const reviewsRes = await getDoctorReviewsAction();
   const reviews = reviewsRes.success ? reviewsRes.reviews : [];
-  const stats = reviewsRes.success ? reviewsRes.stats : { averageRating: 4.9, totalReviews: 0 };
+  const stats = reviewsRes.success ? reviewsRes.stats : { averageRating: 0, totalReviews: 0 };
 
   if (!result.success) {
     return (
@@ -47,7 +47,11 @@ export default async function DoctorProfilePage() {
                 Patient Reviews & Ratings ({reviews.length})
               </h3>
               <p className="text-xs text-slate-500">
-                Average Rating: <strong className="text-slate-900">{stats.averageRating || '4.9'} / 5.0</strong> • Verified patient consultations
+                Average Rating:{' '}
+                <strong className="text-slate-900">
+                  {stats.totalReviews > 0 ? `${stats.averageRating} / 5.0` : 'No ratings yet'}
+                </strong>{' '}
+                • Patient consultations
               </p>
             </div>
           </div>

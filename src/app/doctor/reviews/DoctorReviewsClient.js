@@ -66,7 +66,7 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
           </span>
           <div className="flex items-center justify-center md:justify-start gap-3 mt-1.5">
             <span className="text-4xl font-black text-slate-900 tracking-tight">
-              {stats.averageRating || '4.9'}
+              {stats.totalReviews > 0 ? Number(stats.averageRating).toFixed(1) : '0.0'}
             </span>
             <div>
               <div className="flex items-center gap-1 text-amber-500">
@@ -74,7 +74,7 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
                   <Star
                     key={s}
                     className={`w-4 h-4 ${
-                      s <= Math.round(stats.averageRating || 5)
+                      s <= Math.round(stats.totalReviews > 0 ? stats.averageRating : 0)
                         ? 'fill-amber-400 text-amber-400'
                         : 'text-slate-200'
                     }`}
@@ -82,7 +82,7 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
                 ))}
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Based on {stats.totalReviews || reviews.length} verified ratings
+                Based on {stats.totalReviews || 0} ratings
               </p>
             </div>
           </div>
@@ -96,12 +96,12 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
               <div
                 className="h-full bg-amber-400 rounded-full"
                 style={{
-                  width: `${stats.totalReviews ? (stats.fiveStar / stats.totalReviews) * 100 : 85}%`,
+                  width: `${stats.totalReviews ? (stats.fiveStar / stats.totalReviews) * 100 : 0}%`,
                 }}
               />
             </div>
             <span className="w-6 text-right font-medium text-slate-500">
-              {stats.fiveStar || reviews.filter((r) => r.rating === 5).length}
+              {stats.fiveStar ?? 0}
             </span>
           </div>
 
@@ -111,12 +111,12 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
               <div
                 className="h-full bg-amber-400 rounded-full"
                 style={{
-                  width: `${stats.totalReviews ? (stats.fourStar / stats.totalReviews) * 100 : 15}%`,
+                  width: `${stats.totalReviews ? (stats.fourStar / stats.totalReviews) * 100 : 0}%`,
                 }}
               />
             </div>
             <span className="w-6 text-right font-medium text-slate-500">
-              {stats.fourStar || reviews.filter((r) => r.rating === 4).length}
+              {stats.fourStar ?? 0}
             </span>
           </div>
 
@@ -131,7 +131,7 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
               />
             </div>
             <span className="w-6 text-right font-medium text-slate-500">
-              {stats.threeStar || reviews.filter((r) => r.rating === 3).length}
+              {stats.threeStar ?? 0}
             </span>
           </div>
         </div>
@@ -328,9 +328,13 @@ export default function DoctorReviewsClient({ initialReviews = [], stats }) {
         {filteredReviews.length === 0 && (
           <div className="py-12 text-center bg-white rounded-3xl border border-slate-200">
             <Star className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-            <p className="text-sm font-bold text-slate-800">No reviews found</p>
+            <p className="text-sm font-bold text-slate-800">
+              {reviews.length === 0 ? 'No patient reviews yet' : 'No reviews found'}
+            </p>
             <p className="text-xs text-slate-500 mt-1">
-              No patient feedback matches the selected rating filter.
+              {reviews.length === 0
+                ? 'Verified patient reviews submitted for your profile will appear here.'
+                : 'No patient feedback matches the selected rating filter.'}
             </p>
           </div>
         )}

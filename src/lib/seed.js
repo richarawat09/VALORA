@@ -63,8 +63,8 @@ export async function seedInitialData() {
     availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
     availableHours: { start: '09:00', end: '16:00' },
     isVerified: true,
-    rating: 4.9,
-    totalReviews: 48,
+    rating: 0,
+    totalReviews: 0,
   });
 
   const docUser2 = await User.create({
@@ -94,8 +94,8 @@ export async function seedInitialData() {
     availableDays: ['Monday', 'Wednesday', 'Friday', 'Saturday'],
     availableHours: { start: '10:00', end: '18:00' },
     isVerified: true,
-    rating: 4.8,
-    totalReviews: 36,
+    rating: 0,
+    totalReviews: 0,
   });
 
   const docUser3 = await User.create({
@@ -125,8 +125,8 @@ export async function seedInitialData() {
     availableDays: ['Tuesday', 'Thursday', 'Saturday'],
     availableHours: { start: '11:00', end: '17:00' },
     isVerified: false,
-    rating: 4.6,
-    totalReviews: 12,
+    rating: 0,
+    totalReviews: 0,
   });
 
   // 3. Create Patients
